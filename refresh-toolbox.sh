@@ -5,9 +5,9 @@
 
 set -e
 
-TOOLBOX_NAME="unsloth-rocm-7.2"
 IMAGE_REPO="ghcr.io/justin-noel/amd-strix-halo-unsloth-toolboxes"
 TAG="${1:-rocm-7.2}"
+TOOLBOX_NAME="unsloth-${TAG}"
 IMAGE="${IMAGE_REPO}:${TAG}"
 
 # GPU access for ROCm inside the container

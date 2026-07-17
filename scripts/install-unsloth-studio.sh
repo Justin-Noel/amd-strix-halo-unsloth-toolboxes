@@ -8,6 +8,11 @@
 
 set -euo pipefail
 
+# Torch wheel track: "rocm7.2" (official PyTorch rocm7.2 wheels, default) or
+# "gfx1151-nightlies" (TheRock gfx1151 nightly wheels — the Strix Halo
+# guide's primary validated track, APPENDIX_STRIX_HALO.md §4.1).
+TORCH_TRACK="${TORCH_TRACK:-rocm7.2}"
+
 export STUDIO_HOME=/opt/unsloth/studio
 export VENV="$STUDIO_HOME/unsloth_studio"
 export PY="$VENV/bin/python"
@@ -16,6 +21,7 @@ export PY="$VENV/bin/python"
 # the non-root toolbox user. Keep it under /opt/unsloth instead.
 export UV_PYTHON_INSTALL_DIR=/opt/unsloth/python
 ROCM_INDEX="https://download.pytorch.org/whl/rocm7.2"
+NIGHTLY_INDEX="https://rocm.nightlies.amd.com/v2/gfx1151/"
 BNB_WHEEL="https://github.com/bitsandbytes-foundation/bitsandbytes/releases/download/continuous-release_main/bitsandbytes-1.33.7.preview-py3-none-manylinux_2_24_x86_64.whl"
 
 echo "==> Installing uv"
@@ -30,15 +36,25 @@ rm -f /tmp/unsloth-install.sh
 
 [ -x "$PY" ] || { echo "ERROR: Studio venv python not found at $PY" >&2; exit 1; }
 
-echo "==> Forcing ROCm 7.2 torch into the Studio venv (+cpu trap recovery)"
-# Pinned pattern from unsloth's AMD doc first; unpinned triple as fallback
-# (the rocm7.2 index may only carry torch >= 2.11, outside the pins).
-uv pip install --python "$PY" \
-    "torch>=2.4,<2.11.0" "torchvision<0.26.0" "torchaudio<2.11.0" \
-    --index-url "$ROCM_INDEX" --upgrade --force-reinstall \
-|| uv pip install --python "$PY" \
-    torch torchvision torchaudio \
-    --index-url "$ROCM_INDEX" --upgrade --force-reinstall
+if [ "$TORCH_TRACK" = "gfx1151-nightlies" ]; then
+    echo "==> Installing TheRock gfx1151 nightly ROCm SDK + torch (+cpu trap recovery)"
+    # Guide §4.1: rocm metapackage and torch must come from the SAME index;
+    # never let PyPI be the primary index for torch here.
+    uv pip install --python "$PY" --index-url "$NIGHTLY_INDEX" \
+        "rocm[libraries,devel]"
+    uv pip install --python "$PY" --index-url "$NIGHTLY_INDEX" \
+        --prerelease=allow torch torchvision torchaudio --upgrade --force-reinstall
+else
+    echo "==> Forcing ROCm 7.2 torch into the Studio venv (+cpu trap recovery)"
+    # Pinned pattern from unsloth's AMD doc first; unpinned triple as fallback
+    # (the rocm7.2 index may only carry torch >= 2.11, outside the pins).
+    uv pip install --python "$PY" \
+        "torch>=2.4,<2.11.0" "torchvision<0.26.0" "torchaudio<2.11.0" \
+        --index-url "$ROCM_INDEX" --upgrade --force-reinstall \
+    || uv pip install --python "$PY" \
+        torch torchvision torchaudio \
+        --index-url "$ROCM_INDEX" --upgrade --force-reinstall
+fi
 
 echo "==> Installing bitsandbytes preview wheel (AMD 4-bit NaN fix)"
 # Per unsloth AMD docs: plain pip, --no-deps, force.
@@ -69,6 +85,14 @@ os.environ.setdefault("HF_HUB_ENABLE_HF_TRANSFER", "0")
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
 os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
 EOF
+
+if [ "$TORCH_TRACK" = "gfx1151-nightlies" ]; then
+    # HIP 7.13+ makes bitsandbytes look for libbitsandbytes_rocm713.so; the
+    # preview wheel ships the rocm71 build (guide APPENDIX §"bitsandbytes").
+    cat >> "$SITE_PACKAGES/sitecustomize.py" <<'EOF'
+os.environ.setdefault("BNB_ROCM_VERSION", "71")
+EOF
+fi
 
 mkdir -p "$STUDIO_HOME/unsloth_compiled_cache"
 

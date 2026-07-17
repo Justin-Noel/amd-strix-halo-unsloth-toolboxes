@@ -15,15 +15,17 @@ The ROCm/gfx1151 Unsloth Studio workarounds baked into this image come from the 
 | Toolbox | Image tag | Stack |
 |---|---|---|
 | `rocm-7.2` | `ghcr.io/justin-noel/amd-strix-halo-unsloth-toolboxes:rocm-7.2` | Ubuntu 24.04 · ROCm 7.2 · torch +rocm7.2 · Unsloth Studio |
+| `gfx1151-nightlies` | `ghcr.io/justin-noel/amd-strix-halo-unsloth-toolboxes:gfx1151-nightlies` | Ubuntu 24.04 · TheRock gfx1151 nightly ROCm SDK + torch nightly · Unsloth Studio |
 
-Immutable snapshots are also published as `rocm-7.2_<timestamp>`.
+`rocm-7.2` is the stable default. `gfx1151-nightlies` tracks TheRock's gfx1151 nightly wheels (`rocm.nightlies.amd.com/v2/gfx1151/`) — the [Strix Halo guide's](https://github.com/t-sinclair2500/unsloth_studio_rocm_Halo_Strix) primary validated track, fresher kernels/fixes but a moving target. Immutable snapshots are also published as `<variant>_<timestamp>`.
 
 ## Quick Start
 
-The easy way (auto-detects Toolbx vs Distrobox):
+The easy way (auto-detects Toolbx vs Distrobox; pass a variant tag, default `rocm-7.2`):
 
 ```bash
-./refresh-toolbox.sh
+./refresh-toolbox.sh                    # rocm-7.2
+./refresh-toolbox.sh gfx1151-nightlies  # TheRock nightlies variant
 ```
 
 Or manually — Fedora / Toolbx:

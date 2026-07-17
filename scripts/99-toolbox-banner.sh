@@ -47,6 +47,7 @@ PY
 MACHINE="$(oem_info)"
 GPU="$(gpu_name)"
 TORCH="$(torch_info)"
+VARIANT="$(cat /etc/unsloth-toolbox-variant 2>/dev/null || echo rocm-7.2)"
 
 echo
 cat <<'ASCII'
@@ -60,13 +61,13 @@ cat <<'ASCII'
                       U N S L O T H   S T U D I O
 ASCII
 echo
-printf 'AMD STRIX HALO — Unsloth Studio Toolbox (gfx1151, ROCm 7.2)\n'
+printf 'AMD STRIX HALO — Unsloth Studio Toolbox (gfx1151, %s)\n' "$VARIANT"
 [[ -n "$TORCH" ]] && printf 'PyTorch: %s\n' "$TORCH"
 echo
 printf 'Machine: %s\n' "$MACHINE"
 printf 'GPU    : %s\n\n' "$GPU"
 printf 'Repo   : https://github.com/Justin-Noel/amd-strix-halo-unsloth-toolboxes\n'
-printf 'Image  : ghcr.io/justin-noel/amd-strix-halo-unsloth-toolboxes:rocm-7.2\n\n'
+printf 'Image  : ghcr.io/justin-noel/amd-strix-halo-unsloth-toolboxes:%s\n\n' "$VARIANT"
 printf 'Included:\n'
 printf '  - %-20s → %s\n' "start-unsloth-studio" "Launch Unsloth Studio web UI (port 8888)"
 printf '  - %-20s → %s\n' "unsloth CLI"          "unsloth train -c config.yaml"

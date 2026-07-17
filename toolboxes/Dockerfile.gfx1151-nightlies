@@ -1,8 +1,11 @@
-# Unsloth Studio toolbox for AMD Strix Halo (gfx1151) — ROCm 7.2
+# Unsloth Studio toolbox for AMD Strix Halo (gfx1151) — TheRock nightlies
 #
-# Ubuntu 24.04 base with a minimal ROCm 7.2 userspace (PyTorch ROCm wheels
-# bundle their own ROCm runtime libraries) and Unsloth Studio baked into
-# /opt/unsloth/studio so it survives toolbox/distrobox $HOME mounting.
+# Like Dockerfile.rocm-7.2, but the Python stack (ROCm SDK + torch) comes
+# from TheRock's gfx1151 nightly wheel index — the Strix Halo guide's
+# primary validated track (rocm.nightlies.amd.com/v2/gfx1151/). The minimal
+# ROCm 7.2 apt userspace is still installed: it provides rocminfo/rocm-smi
+# for diagnostics and the system HSA runtime that Studio's llama.cpp uses
+# (the prebuilt's bundled TheRock HSA segfaults on gfx1151).
 #
 # Toolbox pattern credit: kyuz0 — https://github.com/kyuz0/amd-strix-halo-toolboxes
 
@@ -10,7 +13,7 @@ FROM ubuntu:24.04
 
 LABEL com.github.containers.toolbox="true" \
       org.opencontainers.image.source="https://github.com/Justin-Noel/amd-strix-halo-unsloth-toolboxes" \
-      org.opencontainers.image.description="Unsloth Studio on ROCm 7.2 for AMD Strix Halo (gfx1151)"
+      org.opencontainers.image.description="Unsloth Studio on TheRock gfx1151 nightlies for AMD Strix Halo"
 
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -22,10 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
       python3 python3-venv \
     && rm -rf /var/lib/apt/lists/*
 
-# ROCm 7.2 apt repository (userspace only — no kernel driver in a container).
-# Minimal set: diagnostics (rocminfo, rocm-smi) + HIP runtime for tool
-# compatibility. Torch rocm7.2 wheels ship their own ROCm libs, so the full
-# `rocm` metapackage (~30 GB) is deliberately NOT installed.
+# Minimal ROCm 7.2 apt userspace (diagnostics + system HSA runtime for
+# llama.cpp; the torch stack brings its own ROCm libs via nightly wheels).
 RUN mkdir -p /etc/apt/keyrings \
     && curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key \
        | gpg --dearmor -o /etc/apt/keyrings/rocm.gpg \
@@ -44,10 +45,9 @@ RUN mkdir -p /etc/apt/keyrings \
 RUN apt-get update && apt-get install -y --no-install-recommends radeontop \
     && rm -rf /var/lib/apt/lists/* || true
 
-# Unsloth Studio into /opt/unsloth/studio (venv, ROCm torch, bitsandbytes
-# preview wheel, sitecustomize workarounds). See the script for details.
+# Unsloth Studio with TheRock gfx1151 nightly ROCm SDK + torch
 COPY scripts/install-unsloth-studio.sh /tmp/install-unsloth-studio.sh
-RUN TORCH_TRACK=rocm7.2 bash /tmp/install-unsloth-studio.sh \
+RUN TORCH_TRACK=gfx1151-nightlies bash /tmp/install-unsloth-studio.sh \
     && rm /tmp/install-unsloth-studio.sh
 
 # Studio's chat/GGUF engine: swap the CPU llama.cpp the installer picked
@@ -65,7 +65,7 @@ ENV PATH=/opt/rocm/bin:$PATH
 RUN groupadd -f -r render
 
 # Variant marker shown by the login banner
-RUN echo "rocm-7.2" > /etc/unsloth-toolbox-variant
+RUN echo "gfx1151-nightlies" > /etc/unsloth-toolbox-variant
 
 # Shell environment + banner + launcher
 COPY scripts/01-unsloth-env.sh /etc/profile.d/01-unsloth-env.sh

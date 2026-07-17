@@ -25,7 +25,7 @@ jobs:
     steps:
       - id: set-matrix
         run: |
-          ALL='["rocm-7.2"]'
+          ALL='["rocm-7.2","gfx1151-nightlies"]'
           INPUT="${{ github.event.inputs.variants }}"
           if [ -z "$INPUT" ] || [ "$INPUT" = "all" ]; then
             echo "matrix=$ALL" >> "$GITHUB_OUTPUT"
