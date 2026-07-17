@@ -41,9 +41,12 @@ echo "==> Installing bitsandbytes preview wheel (AMD 4-bit NaN fix)"
 "$PY" -m pip install --force-reinstall --no-cache-dir --no-deps "$BNB_WHEEL"
 
 echo "==> Purging any nvidia-* wheels pulled in by dependency resolution"
-"$PY" -m pip list --format=freeze 2>/dev/null \
-    | grep -E '^nvidia-' | cut -d= -f1 \
-    | xargs -r "$PY" -m pip uninstall -y
+NVIDIA_PKGS="$("$PY" -m pip list --format=freeze 2>/dev/null | grep -E '^nvidia-' | cut -d= -f1 || true)"
+if [ -n "$NVIDIA_PKGS" ]; then
+    echo "$NVIDIA_PKGS" | xargs "$PY" -m pip uninstall -y
+else
+    echo "none found"
+fi
 
 echo "==> Writing sitecustomize.py (gfx1151/ROCm workarounds)"
 SITE_PACKAGES="$("$PY" -c 'import sysconfig; print(sysconfig.get_paths()["purelib"])')"
@@ -74,8 +77,10 @@ EOF
 # bitsandbytes import is best-effort without a GPU present
 "$PY" -c "import bitsandbytes; print('OK bitsandbytes', bitsandbytes.__version__)" \
     || echo "WARN: bitsandbytes import failed at build time (no GPU); verify at runtime"
-"$VENV/bin/unsloth" studio --help >/dev/null \
-    && echo "OK unsloth studio CLI"
+# The installer places the CLI in the venv and/or $STUDIO_HOME/bin
+UNSLOTH_CLI="$VENV/bin/unsloth"
+[ -x "$UNSLOTH_CLI" ] || UNSLOTH_CLI="$STUDIO_HOME/bin/unsloth"
+"$UNSLOTH_CLI" studio --help >/dev/null && echo "OK unsloth studio CLI ($UNSLOTH_CLI)"
 
 echo "==> Fixing permissions (toolbox runs as the host user, not root)"
 chmod -R a+rwX /opt/unsloth

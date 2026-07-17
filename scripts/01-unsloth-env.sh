@@ -9,6 +9,12 @@ export HF_HUB_ENABLE_HF_TRANSFER="${HF_HUB_ENABLE_HF_TRANSFER:-0}"
 export HF_HUB_DISABLE_XET="${HF_HUB_DISABLE_XET:-1}"
 export TOKENIZERS_PARALLELISM="${TOKENIZERS_PARALLELISM:-false}"
 
+# ROCm tools (rocminfo, rocm-smi) — bitsandbytes needs rocminfo on PATH
+case ":$PATH:" in
+    *":/opt/rocm/bin:"*) ;;
+    *) export PATH="/opt/rocm/bin:$PATH" ;;
+esac
+
 # Studio venv tools (unsloth CLI, its python) at the end of PATH so the
 # system python3 stays the default interpreter.
 case ":$PATH:" in
