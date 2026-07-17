@@ -17,7 +17,7 @@ fi
 
 echo "Starting Unsloth Studio on http://localhost:$PORT"
 echo "First login password (created on first start):"
-echo "  cat ~/.unsloth/studio/auth/.bootstrap_password"
+echo "  cat /opt/unsloth/studio/auth/.bootstrap_password"
 echo "Health check: curl -s http://127.0.0.1:$PORT/api/health"
 echo "  (\"chat_only\": false means the ROCm GPU training path is active)"
 echo

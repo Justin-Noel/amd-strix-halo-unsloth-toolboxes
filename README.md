@@ -56,7 +56,7 @@ Inside the toolbox:
 start-unsloth-studio
 ```
 
-Then open <http://localhost:8888>. The first-login password is written to `~/.unsloth/studio/auth/.bootstrap_password`.
+Then open <http://localhost:8888>. The first-login password is written to `/opt/unsloth/studio/auth/.bootstrap_password` (inside the toolbox). Forgot it? Run `unsloth studio reset-password` inside the toolbox and restart Studio.
 
 Verify the GPU training path is active:
 
@@ -87,12 +87,11 @@ Add them to `GRUB_CMDLINE_LINUX_DEFAULT` in `/etc/default/grub`, then `sudo upda
 
 ## Persistence
 
-Toolbx/Distrobox mount your host `$HOME`, so everything that matters survives container rebuilds:
+Toolbx/Distrobox mount your host `$HOME`, so downloaded models survive container rebuilds:
 
-- Studio auth/config and datasets: `~/.unsloth/`
-- Hugging Face model cache: `~/.cache/huggingface/`
+- Hugging Face model cache: `~/.cache/huggingface/` — persists across refreshes and is shared by all variants.
 
-The Studio venv itself lives in the image (`/opt/unsloth/studio`), so refreshing the toolbox gives you a clean, updated stack without losing your data.
+Studio itself (venv, auth database, training outputs/exports under `/opt/unsloth/studio`) lives **in the container**: refreshing the toolbox gives you a clean, updated stack but resets the Studio password and removes Studio-side outputs — export or copy anything you want to keep into your home directory first.
 
 ## Troubleshooting
 
