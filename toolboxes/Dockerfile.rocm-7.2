@@ -53,6 +53,11 @@ RUN bash /tmp/install-unsloth-studio.sh && rm /tmp/install-unsloth-studio.sh
 # shells out to rocminfo for GPU-arch detection.
 ENV PATH=/opt/rocm/bin:$PATH
 
+# Ubuntu's base image defines `video` but not `render`; toolbox/distrobox
+# creation passes `--group-add render`, which podman resolves against the
+# container's /etc/group.
+RUN groupadd -f -r render
+
 # Shell environment + banner + launcher
 COPY scripts/01-unsloth-env.sh /etc/profile.d/01-unsloth-env.sh
 COPY scripts/99-toolbox-banner.sh /etc/profile.d/99-toolbox-banner.sh
