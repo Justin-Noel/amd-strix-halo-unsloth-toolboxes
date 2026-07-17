@@ -111,6 +111,8 @@ The Studio venv itself lives in the image (`/opt/unsloth/studio`), so refreshing
 
 **GPU not visible** → confirm the container was created with `--device /dev/dri --device /dev/kfd --group-add video --group-add render`, and `rocminfo` shows `gfx1151`.
 
+**Chat runs on CPU** → Studio's chat/GGUF engine is a separate `llama.cpp` from the PyTorch training path. This image ships the ROCm gfx1151 build (check with `/opt/unsloth/studio/llama.cpp/llama-server --list-devices` — it should list `ROCm0: Radeon 8060S`). Beware `unsloth studio update`: run without a GPU visible it can reinstall the CPU build. Note the bundled TheRock HSA runtime in Unsloth's rocm-gfx1151 prebuilt segfaults on gfx1151 with recent kernels; the image symlinks the system ROCm 7.2 HSA runtime over it (see `scripts/install-llamacpp-gfx1151.sh`).
+
 Do **not** set `HSA_OVERRIDE_GFX_VERSION` on gfx1151 — the stack targets it natively.
 
 ## Building Locally

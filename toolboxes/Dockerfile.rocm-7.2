@@ -49,6 +49,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends radeontop \
 COPY scripts/install-unsloth-studio.sh /tmp/install-unsloth-studio.sh
 RUN bash /tmp/install-unsloth-studio.sh && rm /tmp/install-unsloth-studio.sh
 
+# Studio's chat/GGUF engine: swap the CPU llama.cpp the installer picked
+# (no GPU visible at build time) for the same release's rocm-gfx1151 build.
+COPY scripts/install-llamacpp-gfx1151.sh /tmp/install-llamacpp-gfx1151.sh
+RUN bash /tmp/install-llamacpp-gfx1151.sh && rm /tmp/install-llamacpp-gfx1151.sh
+
 # ROCm tools (rocminfo, rocm-smi) live under /opt/rocm/bin — bitsandbytes
 # shells out to rocminfo for GPU-arch detection.
 ENV PATH=/opt/rocm/bin:$PATH
