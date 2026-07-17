@@ -1,0 +1,59 @@
+# Unsloth Studio toolbox for AMD Strix Halo (gfx1151) — ROCm 7.2
+#
+# Ubuntu 24.04 base with a minimal ROCm 7.2 userspace (PyTorch ROCm wheels
+# bundle their own ROCm runtime libraries) and Unsloth Studio baked into
+# /opt/unsloth/studio so it survives toolbox/distrobox $HOME mounting.
+#
+# Toolbox pattern credit: kyuz0 — https://github.com/kyuz0/amd-strix-halo-toolboxes
+
+FROM ubuntu:24.04
+
+LABEL com.github.containers.toolbox="true" \
+      org.opencontainers.image.source="https://github.com/Justin-Noel/amd-strix-halo-unsloth-toolboxes" \
+      org.opencontainers.image.description="Unsloth Studio on ROCm 7.2 for AMD Strix Halo (gfx1151)"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Base tooling
+RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl wget gnupg \
+      git git-lfs sudo vim less procps pciutils \
+      libnuma1 libdrm2 libdrm-amdgpu1 \
+      python3 python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# ROCm 7.2 apt repository (userspace only — no kernel driver in a container).
+# Minimal set: diagnostics (rocminfo, rocm-smi) + HIP runtime for tool
+# compatibility. Torch rocm7.2 wheels ship their own ROCm libs, so the full
+# `rocm` metapackage (~30 GB) is deliberately NOT installed.
+RUN mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://repo.radeon.com/rocm/rocm.gpg.key \
+       | gpg --dearmor -o /etc/apt/keyrings/rocm.gpg \
+    && echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/7.2 noble main" \
+       > /etc/apt/sources.list.d/rocm.list \
+    && printf 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600\n' \
+       > /etc/apt/preferences.d/rocm-pin-600 \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends \
+       rocminfo rocm-smi-lib hip-runtime-amd \
+    && rm -rf /var/lib/apt/lists/* \
+    && echo /opt/rocm/lib > /etc/ld.so.conf.d/rocm.conf \
+    && ldconfig
+
+# radeontop is handy for watching the iGPU but lives in universe; best effort.
+RUN apt-get update && apt-get install -y --no-install-recommends radeontop \
+    && rm -rf /var/lib/apt/lists/* || true
+
+# Unsloth Studio into /opt/unsloth/studio (venv, ROCm torch, bitsandbytes
+# preview wheel, sitecustomize workarounds). See the script for details.
+COPY scripts/install-unsloth-studio.sh /tmp/install-unsloth-studio.sh
+RUN bash /tmp/install-unsloth-studio.sh && rm /tmp/install-unsloth-studio.sh
+
+# Shell environment + banner + launcher
+COPY scripts/01-unsloth-env.sh /etc/profile.d/01-unsloth-env.sh
+COPY scripts/99-toolbox-banner.sh /etc/profile.d/99-toolbox-banner.sh
+COPY scripts/start-unsloth-studio /usr/local/bin/start-unsloth-studio
+RUN chmod 0755 /usr/local/bin/start-unsloth-studio \
+    && chmod 0644 /etc/profile.d/01-unsloth-env.sh /etc/profile.d/99-toolbox-banner.sh
+
+CMD ["/bin/bash"]

@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+# Launch Unsloth Studio from the baked-in venv.
+# Extra arguments are passed straight to `unsloth studio`.
+
+set -euo pipefail
+
+VENV=/opt/unsloth/studio/unsloth_studio
+HOST="${UNSLOTH_STUDIO_HOST:-0.0.0.0}"
+PORT="${UNSLOTH_STUDIO_PORT:-8888}"
+
+if [ ! -x "$VENV/bin/unsloth" ]; then
+    echo "ERROR: Unsloth Studio venv not found at $VENV" >&2
+    exit 1
+fi
+
+echo "Starting Unsloth Studio on http://localhost:$PORT"
+echo "First login password (created on first start):"
+echo "  cat ~/.unsloth/studio/auth/.bootstrap_password"
+echo "Health check: curl -s http://127.0.0.1:$PORT/api/health"
+echo "  (\"chat_only\": false means the ROCm GPU training path is active)"
+echo
+
+exec "$VENV/bin/unsloth" studio -H "$HOST" -p "$PORT" "$@"
