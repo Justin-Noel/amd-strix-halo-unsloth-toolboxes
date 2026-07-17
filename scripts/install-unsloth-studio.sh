@@ -11,6 +11,10 @@ set -euo pipefail
 export STUDIO_HOME=/opt/unsloth/studio
 export VENV="$STUDIO_HOME/unsloth_studio"
 export PY="$VENV/bin/python"
+# uv's managed Python defaults to ~/.local/share/uv (= /root at build time,
+# mode 700) and the venv symlinks its interpreter there — unreachable for
+# the non-root toolbox user. Keep it under /opt/unsloth instead.
+export UV_PYTHON_INSTALL_DIR=/opt/unsloth/python
 ROCM_INDEX="https://download.pytorch.org/whl/rocm7.2"
 BNB_WHEEL="https://github.com/bitsandbytes-foundation/bitsandbytes/releases/download/continuous-release_main/bitsandbytes-1.33.7.preview-py3-none-manylinux_2_24_x86_64.whl"
 
